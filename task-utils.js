@@ -8,6 +8,8 @@
     root.StudyBoardUtils = utils;
   }
 })(typeof globalThis === "object" ? globalThis : this, function () {
+  const MAX_NOTES_LENGTH = 500;
+
   function isValidDateValue(dateValue) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return false;
     const [year, month, day] = dateValue.split("-").map(Number);
@@ -27,8 +29,19 @@
       typeof task.course === "string" &&
       isValidDateValue(task.dueDate) &&
       ["alta", "media", "baja"].includes(task.priority) &&
-      typeof task.completed === "boolean"
+      typeof task.completed === "boolean" &&
+      (typeof task.notes === "undefined" ||
+        (typeof task.notes === "string" &&
+          task.notes.length <= MAX_NOTES_LENGTH))
     );
+  }
+
+  function normalizeTask(task) {
+    if (!isValidTask(task)) return null;
+    return {
+      ...task,
+      notes: typeof task.notes === "string" ? task.notes : "",
+    };
   }
 
   function getDateAtMidnight(dateValue) {
@@ -131,8 +144,8 @@
       throw new Error("El archivo no contiene una lista de tareas.");
     }
 
-    const validTasks = importedTasks.filter(isValidTask);
-    if (validTasks.length !== importedTasks.length) {
+    const validTasks = importedTasks.map(normalizeTask);
+    if (validTasks.some((task) => task === null)) {
       throw new Error("El archivo contiene tareas con datos inválidos.");
     }
     if (new Set(validTasks.map((task) => task.id)).size !== validTasks.length) {
@@ -148,6 +161,7 @@
     getUrgency,
     isValidDateValue,
     isValidTask,
+    normalizeTask,
     parseImportedTasks,
     serializeTasks,
   };

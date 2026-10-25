@@ -6,6 +6,7 @@ const {
   getUrgency,
   isValidDateValue,
   isValidTask,
+  normalizeTask,
   parseImportedTasks,
   serializeTasks,
 } = window.StudyBoardUtils;
@@ -25,6 +26,9 @@ const elements = {
   courseInput: document.querySelector("#task-course"),
   dueDateInput: document.querySelector("#task-due-date"),
   priorityInput: document.querySelector("#task-priority"),
+  notesInput: document.querySelector("#task-notes"),
+  notesCount: document.querySelector("#notes-count"),
+  notesHelp: document.querySelector("#notes-help"),
   titleError: document.querySelector("#title-error"),
   dateError: document.querySelector("#date-error"),
   formTitle: document.querySelector("#new-task-title"),
@@ -52,7 +56,9 @@ function loadTasks() {
   try {
     const savedTasks = localStorage.getItem(STORAGE_KEY);
     const parsedTasks = savedTasks ? JSON.parse(savedTasks) : [];
-    return Array.isArray(parsedTasks) ? parsedTasks.filter(isValidTask) : [];
+    return Array.isArray(parsedTasks)
+      ? parsedTasks.filter(isValidTask).map(normalizeTask)
+      : [];
   } catch {
     return [];
   }
@@ -132,13 +138,21 @@ function announce(message) {
   elements.statusMessage.textContent = message;
 }
 
+function updateNotesCount() {
+  const count = elements.notesInput.value.length;
+  elements.notesCount.textContent = `${count} de 500 caracteres${
+    count === 500 ? " (límite alcanzado)" : ""
+  }`;
+  elements.notesHelp.classList.toggle("is-limit", count === 500);
+}
+
 function updateStatusButton(button) {
   const isActive = button.dataset.status === state.statusFilter;
   button.classList.toggle("is-active", isActive);
   button.setAttribute("aria-pressed", String(isActive));
 }
 
-function createTask(title, course, dueDate, priority) {
+function createTask(title, course, dueDate, priority, notes) {
   return {
     id:
       window.crypto && crypto.randomUUID
@@ -148,6 +162,7 @@ function createTask(title, course, dueDate, priority) {
     course: course.trim() || "Sin curso",
     dueDate,
     priority,
+    notes: notes.trim(),
     completed: false,
   };
 }
@@ -191,6 +206,7 @@ function validateTaskForm() {
 function resetForm() {
   state.editingTaskId = null;
   elements.form.reset();
+  updateNotesCount();
   elements.priorityInput.value = "media";
   elements.formTitle.textContent = "Agregar tarea";
   elements.submitButton.textContent = "Agregar tarea";
@@ -210,6 +226,8 @@ function startEditing(taskId) {
   elements.courseInput.value = task.course === "Sin curso" ? "" : task.course;
   elements.dueDateInput.value = task.dueDate;
   elements.priorityInput.value = task.priority;
+  elements.notesInput.value = task.notes;
+  updateNotesCount();
   elements.formTitle.textContent = "Editar tarea";
   elements.submitButton.textContent = "Guardar cambios";
   elements.cancelButton.hidden = false;
@@ -257,6 +275,9 @@ function renderTask(task) {
   card.classList.toggle("is-completed", task.completed);
   taskElement.querySelector(".task-title").textContent = task.title;
   taskElement.querySelector(".task-course").textContent = task.course;
+  const notesElement = taskElement.querySelector(".task-notes");
+  notesElement.textContent = task.notes;
+  notesElement.hidden = !task.notes;
   taskElement.querySelector(".task-date").textContent =
     `Entrega: ${formatDate(task.dueDate)}`;
   taskElement.querySelector(".priority-badge").textContent =
@@ -357,6 +378,7 @@ function handleFormSubmit(event) {
     course: elements.courseInput.value,
     dueDate: elements.dueDateInput.value,
     priority: elements.priorityInput.value,
+    notes: elements.notesInput.value,
   };
   const isEditing = state.editingTaskId !== null;
   if (isEditing) {
@@ -368,6 +390,7 @@ function handleFormSubmit(event) {
             course: taskValues.course.trim() || "Sin curso",
             dueDate: taskValues.dueDate,
             priority: taskValues.priority,
+            notes: taskValues.notes.trim(),
           }
         : task,
     );
@@ -378,6 +401,7 @@ function handleFormSubmit(event) {
         taskValues.course,
         taskValues.dueDate,
         taskValues.priority,
+        taskValues.notes,
       ),
     );
   }
@@ -391,6 +415,7 @@ function handleFormSubmit(event) {
 
 function initializeEvents() {
   elements.form.addEventListener("submit", handleFormSubmit);
+  elements.notesInput.addEventListener("input", updateNotesCount);
   elements.cancelButton.addEventListener("click", resetForm);
   elements.clearFiltersButton.addEventListener("click", clearFilters);
   elements.exportButton.addEventListener("click", exportTasks);
@@ -433,6 +458,7 @@ function initializeApp() {
   state.tasks = loadTasks();
   initializeEvents();
   updateCourseFilter();
+  updateNotesCount();
   renderTasks();
 }
 

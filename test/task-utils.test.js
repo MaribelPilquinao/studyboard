@@ -20,6 +20,7 @@ function makeTask(overrides = {}) {
     course: "Historia",
     dueDate: "2026-10-28",
     priority: "media",
+    notes: "",
     completed: false,
     ...overrides,
   };
@@ -35,6 +36,8 @@ test("valida la estructura de una tarea", () => {
   assert.equal(isValidTask(makeTask()), true);
   assert.equal(isValidTask(makeTask({ priority: "urgente" })), false);
   assert.equal(isValidTask(makeTask({ dueDate: "2026-02-31" })), false);
+  assert.equal(isValidTask(makeTask({ notes: "x".repeat(501) })), false);
+  assert.equal(isValidTask({ ...makeTask(), notes: undefined }), true);
 });
 
 test("calcula días restantes sin depender de la hora actual", () => {
@@ -143,6 +146,23 @@ test("exporta e importa una lista de tareas", () => {
   assert.equal(parsed.version, 1);
   assert.deepEqual(parseImportedTasks(exported), tasks);
   assert.deepEqual(parseImportedTasks(JSON.stringify(tasks)), tasks);
+});
+
+test("normaliza tareas antiguas sin notas", () => {
+  const legacyTask = makeTask();
+  delete legacyTask.notes;
+
+  assert.deepEqual(parseImportedTasks(JSON.stringify([legacyTask])), [
+    { ...makeTask(), notes: "" },
+  ]);
+});
+
+test("conserva notas multilinea en importación y exportación", () => {
+  const tasks = [
+    makeTask({ id: "noted", notes: "Leer páginas 1-3\nLlevar resumen" }),
+  ];
+
+  assert.deepEqual(parseImportedTasks(serializeTasks(tasks)), tasks);
 });
 
 test("rechaza importaciones con estructura o tareas inválidas", () => {

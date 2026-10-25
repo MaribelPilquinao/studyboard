@@ -69,6 +69,20 @@
                 <option value="baja">Baja</option>
               </select>
             </label>
+            <label class="field field-notes">
+              <span>Notas <small>(opcional)</small></span>
+              <textarea
+                id="task-notes"
+                name="notes"
+                rows="3"
+                maxlength="500"
+                aria-describedby="notes-help"
+                placeholder="Instrucciones, materiales o siguiente paso"
+              ></textarea>
+              <small id="notes-help" class="field-help" aria-live="polite">
+                <span id="notes-count">0 de 500 caracteres</span>
+              </small>
+            </label>
           </div>
           <div class="form-actions">
             <button
@@ -231,6 +245,7 @@
             <span class="priority-badge"></span>
           </div>
           <p class="task-course"></p>
+          <p class="task-notes" aria-label="Notas"></p>
           <div class="task-meta">
             <span class="task-date"></span>
             <span class="urgency-badge"></span>
