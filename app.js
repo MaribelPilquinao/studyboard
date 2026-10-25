@@ -1,9 +1,22 @@
 const STORAGE_KEY = "studyboard-tasks";
+const MAX_IMPORT_SIZE = 1024 * 1024;
+const {
+  filterTasks,
+  getDateAtMidnight,
+  getUrgency,
+  isValidDateValue,
+  isValidTask,
+  parseImportedTasks,
+  serializeTasks,
+} = window.StudyBoardUtils;
 
 const state = {
   tasks: [],
   courseFilter: "todos",
-  statusFilter: "todas"
+  statusFilter: "todas",
+  searchQuery: "",
+  sortBy: "date-asc",
+  editingTaskId: null,
 };
 
 const elements = {
@@ -14,91 +27,137 @@ const elements = {
   priorityInput: document.querySelector("#task-priority"),
   titleError: document.querySelector("#title-error"),
   dateError: document.querySelector("#date-error"),
+  formTitle: document.querySelector("#new-task-title"),
+  submitButton: document.querySelector("#submit-button"),
+  cancelButton: document.querySelector("#cancel-button"),
+  taskSearch: document.querySelector("#task-search"),
   courseFilter: document.querySelector("#course-filter"),
+  sortFilter: document.querySelector("#sort-filter"),
+  clearFiltersButton: document.querySelector("#clear-filters-button"),
+  exportButton: document.querySelector("#export-button"),
+  importButton: document.querySelector("#import-button"),
+  importInput: document.querySelector("#import-input"),
   statusButtons: document.querySelectorAll("[data-status]"),
   taskList: document.querySelector("#task-list"),
   taskTemplate: document.querySelector("#task-template"),
   emptyState: document.querySelector("#empty-state"),
   taskCount: document.querySelector("#task-count"),
+  resultsSummary: document.querySelector("#results-summary"),
   progressCount: document.querySelector("#progress-count"),
-  progressBar: document.querySelector("#progress-bar")
+  progressBar: document.querySelector("#progress-bar"),
+  statusMessage: document.querySelector("#status-message"),
 };
 
 function loadTasks() {
   try {
     const savedTasks = localStorage.getItem(STORAGE_KEY);
     const parsedTasks = savedTasks ? JSON.parse(savedTasks) : [];
-    return Array.isArray(parsedTasks) ? parsedTasks : [];
+    return Array.isArray(parsedTasks) ? parsedTasks.filter(isValidTask) : [];
   } catch {
     return [];
   }
 }
 
 function saveTasks() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+    return true;
+  } catch {
+    announce(
+      "No se pudieron guardar los cambios. Revisa el almacenamiento del navegador.",
+    );
+    return false;
+  }
+}
+
+function exportTasks() {
+  const blob = new Blob([serializeTasks(state.tasks)], {
+    type: "application/json",
+  });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `studyboard-tareas-${new Date().toISOString().slice(0, 10)}.json`;
+  link.hidden = true;
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(downloadUrl);
+    link.remove();
+  }, 0);
+  announce("Tareas exportadas.");
+}
+
+async function importTasks(file) {
+  if (!file) return;
+
+  try {
+    if (file.size > MAX_IMPORT_SIZE) {
+      throw new Error("El archivo supera el límite de 1 MB.");
+    }
+    const contents = await file.text();
+    const importedTasks = parseImportedTasks(contents);
+    if (
+      !window.confirm(
+        `¿Reemplazar tus ${state.tasks.length} tareas por ${importedTasks.length} tareas importadas?`,
+      )
+    ) {
+      return;
+    }
+
+    const previousTasks = state.tasks;
+    state.tasks = importedTasks;
+    if (!saveTasks()) {
+      state.tasks = previousTasks;
+      return;
+    }
+    state.courseFilter = "todos";
+    updateCourseFilter();
+    renderTasks();
+    resetForm();
+    announce(
+      `${importedTasks.length} tarea${importedTasks.length === 1 ? "" : "s"} importada${importedTasks.length === 1 ? "" : "s"}.`,
+    );
+  } catch (error) {
+    announce(
+      error.message ||
+        "No se pudo importar el archivo. Usa un JSON de StudyBoard válido.",
+    );
+  } finally {
+    elements.importInput.value = "";
+  }
+}
+
+function announce(message) {
+  elements.statusMessage.textContent = message;
+}
+
+function updateStatusButton(button) {
+  const isActive = button.dataset.status === state.statusFilter;
+  button.classList.toggle("is-active", isActive);
+  button.setAttribute("aria-pressed", String(isActive));
 }
 
 function createTask(title, course, dueDate, priority) {
   return {
-    id: window.crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    id:
+      window.crypto && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`,
     title: title.trim(),
     course: course.trim() || "Sin curso",
     dueDate,
     priority,
-    completed: false
+    completed: false,
   };
-}
-
-function getDateAtMidnight(dateValue) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function getToday() {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
-}
-
-function getDaysRemaining(dueDate) {
-  const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  return Math.round((getDateAtMidnight(dueDate) - getToday()) / millisecondsPerDay);
-}
-
-function getUrgency(dueDate) {
-  const daysRemaining = getDaysRemaining(dueDate);
-
-  if (daysRemaining < 0) {
-    return { label: "Vencida", className: "is-overdue" };
-  }
-  if (daysRemaining === 0) {
-    return { label: "Vence hoy", className: "is-today" };
-  }
-  if (daysRemaining <= 3) {
-    return { label: `Próxima · ${daysRemaining} día${daysRemaining === 1 ? "" : "s"}`, className: "is-soon" };
-  }
-  return { label: "Con tiempo", className: "is-later" };
 }
 
 function formatDate(dateValue) {
   return getDateAtMidnight(dateValue).toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short",
-    year: "numeric"
+    year: "numeric",
   });
-}
-
-function getFilteredTasks() {
-  return state.tasks
-    .filter((task) => state.courseFilter === "todos" || task.course === state.courseFilter)
-    .filter((task) => {
-      if (state.statusFilter === "pendientes") return !task.completed;
-      if (state.statusFilter === "completadas") return task.completed;
-      return true;
-    })
-    .sort((firstTask, secondTask) => {
-      if (firstTask.completed !== secondTask.completed) return Number(firstTask.completed) - Number(secondTask.completed);
-      return firstTask.dueDate.localeCompare(secondTask.dueDate);
-    });
 }
 
 function validateTaskForm() {
@@ -108,29 +167,72 @@ function validateTaskForm() {
 
   elements.titleError.textContent = "";
   elements.dateError.textContent = "";
+  elements.titleInput.setAttribute("aria-invalid", "false");
+  elements.dueDateInput.setAttribute("aria-invalid", "false");
 
   if (!title) {
     elements.titleError.textContent = "Escribe un título.";
+    elements.titleInput.setAttribute("aria-invalid", "true");
     isValid = false;
   }
   if (!dueDate) {
     elements.dateError.textContent = "Selecciona una fecha.";
+    elements.dueDateInput.setAttribute("aria-invalid", "true");
+    isValid = false;
+  } else if (!isValidDateValue(dueDate)) {
+    elements.dateError.textContent = "Selecciona una fecha válida.";
+    elements.dueDateInput.setAttribute("aria-invalid", "true");
     isValid = false;
   }
 
   return isValid;
 }
 
+function resetForm() {
+  state.editingTaskId = null;
+  elements.form.reset();
+  elements.priorityInput.value = "media";
+  elements.formTitle.textContent = "Agregar tarea";
+  elements.submitButton.textContent = "Agregar tarea";
+  elements.cancelButton.hidden = true;
+  elements.titleError.textContent = "";
+  elements.dateError.textContent = "";
+  elements.titleInput.setAttribute("aria-invalid", "false");
+  elements.dueDateInput.setAttribute("aria-invalid", "false");
+}
+
+function startEditing(taskId) {
+  const task = state.tasks.find((currentTask) => currentTask.id === taskId);
+  if (!task) return;
+
+  state.editingTaskId = taskId;
+  elements.titleInput.value = task.title;
+  elements.courseInput.value = task.course === "Sin curso" ? "" : task.course;
+  elements.dueDateInput.value = task.dueDate;
+  elements.priorityInput.value = task.priority;
+  elements.formTitle.textContent = "Editar tarea";
+  elements.submitButton.textContent = "Guardar cambios";
+  elements.cancelButton.hidden = false;
+  elements.titleInput.focus();
+}
+
 function updateCourseFilter() {
-  const courses = [...new Set(state.tasks.map((task) => task.course))].sort((firstCourse, secondCourse) =>
-    firstCourse.localeCompare(secondCourse, "es")
+  const courses = [...new Set(state.tasks.map((task) => task.course))].sort(
+    (firstCourse, secondCourse) =>
+      firstCourse.localeCompare(secondCourse, "es"),
   );
   const previousValue = state.courseFilter;
 
-  elements.courseFilter.replaceChildren(new Option("Todos los cursos", "todos"));
-  courses.forEach((course) => elements.courseFilter.add(new Option(course, course)));
+  elements.courseFilter.replaceChildren(
+    new Option("Todos los cursos", "todos"),
+  );
+  courses.forEach((course) =>
+    elements.courseFilter.add(new Option(course, course)),
+  );
 
-  state.courseFilter = courses.includes(previousValue) ? previousValue : "todos";
+  state.courseFilter = courses.includes(previousValue)
+    ? previousValue
+    : "todos";
   elements.courseFilter.value = state.courseFilter;
 }
 
@@ -149,81 +251,180 @@ function renderTask(task) {
   const urgency = getUrgency(task.dueDate);
   const completeButton = taskElement.querySelector(".button-complete");
   const deleteButton = taskElement.querySelector(".button-delete");
+  const editButton = taskElement.querySelector(".button-edit");
 
   card.dataset.taskId = task.id;
   card.classList.toggle("is-completed", task.completed);
   taskElement.querySelector(".task-title").textContent = task.title;
   taskElement.querySelector(".task-course").textContent = task.course;
-  taskElement.querySelector(".task-date").textContent = `Entrega: ${formatDate(task.dueDate)}`;
-  taskElement.querySelector(".priority-badge").textContent = `Prioridad ${task.priority}`;
+  taskElement.querySelector(".task-date").textContent =
+    `Entrega: ${formatDate(task.dueDate)}`;
+  taskElement.querySelector(".priority-badge").textContent =
+    `Prioridad ${task.priority}`;
 
   const urgencyBadge = taskElement.querySelector(".urgency-badge");
   urgencyBadge.textContent = urgency.label;
   urgencyBadge.classList.add(urgency.className);
 
-  completeButton.textContent = task.completed ? "Reabrir" : "Completar";
-  completeButton.setAttribute("aria-label", `${task.completed ? "Reabrir" : "Completar"} ${task.title}`);
+  const completeLabel = task.completed ? "Reabrir" : "Completar";
+  completeButton.setAttribute("aria-label", `${completeLabel} ${task.title}`);
+  completeButton.title = completeLabel;
   deleteButton.setAttribute("aria-label", `Eliminar ${task.title}`);
+  deleteButton.title = "Eliminar";
+  editButton.setAttribute("aria-label", `Editar ${task.title}`);
+  editButton.title = "Editar";
   completeButton.addEventListener("click", () => toggleTask(task.id));
-  deleteButton.addEventListener("click", () => deleteTask(task.id));
+  editButton.addEventListener("click", () => startEditing(task.id));
+  deleteButton.addEventListener("click", () => confirmDelete(task));
 
   return taskElement;
 }
 
 function renderTasks() {
-  const filteredTasks = getFilteredTasks();
+  const filteredTasks = filterTasks(
+    state.tasks,
+    state.courseFilter,
+    state.statusFilter,
+    state.searchQuery,
+    state.sortBy,
+  );
   elements.taskList.replaceChildren(...filteredTasks.map(renderTask));
   elements.emptyState.hidden = filteredTasks.length > 0;
   elements.taskCount.textContent = `${filteredTasks.length} tarea${filteredTasks.length === 1 ? "" : "s"}`;
+  const hasActiveFilters =
+    state.searchQuery ||
+    state.courseFilter !== "todos" ||
+    state.statusFilter !== "todas";
+  elements.resultsSummary.textContent = hasActiveFilters
+    ? `Mostrando ${filteredTasks.length} de ${state.tasks.length} tareas.`
+    : "";
+  elements.emptyState.textContent = hasActiveFilters
+    ? "No hay tareas que coincidan con los filtros actuales."
+    : "Aún no tienes tareas. Agrega la primera para comenzar.";
   updateProgress();
 }
 
+function clearFilters() {
+  state.searchQuery = "";
+  state.courseFilter = "todos";
+  state.statusFilter = "todas";
+  elements.taskSearch.value = "";
+  elements.courseFilter.value = "todos";
+  elements.sortFilter.value = "date-asc";
+  elements.statusButtons.forEach(updateStatusButton);
+  renderTasks();
+  announce("Filtros limpiados.");
+}
+
 function toggleTask(taskId) {
-  state.tasks = state.tasks.map((task) =>
-    task.id === taskId ? { ...task, completed: !task.completed } : task
+  const updatedTasks = state.tasks.map((task) =>
+    task.id === taskId ? { ...task, completed: !task.completed } : task,
   );
-  saveTasks();
+  const previousTasks = state.tasks;
+  state.tasks = updatedTasks;
+  if (!saveTasks()) {
+    state.tasks = previousTasks;
+    return;
+  }
   renderTasks();
 }
 
+function confirmDelete(task) {
+  if (window.confirm(`¿Eliminar la tarea "${task.title}"?`)) {
+    deleteTask(task.id);
+  }
+}
+
 function deleteTask(taskId) {
+  const previousTasks = state.tasks;
   state.tasks = state.tasks.filter((task) => task.id !== taskId);
-  saveTasks();
+  if (!saveTasks()) {
+    state.tasks = previousTasks;
+    return;
+  }
   updateCourseFilter();
   renderTasks();
+  if (state.editingTaskId === taskId) resetForm();
+  announce("Tarea eliminada.");
 }
 
 function handleFormSubmit(event) {
   event.preventDefault();
   if (!validateTaskForm()) return;
 
-  state.tasks.push(createTask(
-    elements.titleInput.value,
-    elements.courseInput.value,
-    elements.dueDateInput.value,
-    elements.priorityInput.value
-  ));
-  saveTasks();
+  const taskValues = {
+    title: elements.titleInput.value,
+    course: elements.courseInput.value,
+    dueDate: elements.dueDateInput.value,
+    priority: elements.priorityInput.value,
+  };
+  const isEditing = state.editingTaskId !== null;
+  if (isEditing) {
+    state.tasks = state.tasks.map((task) =>
+      task.id === state.editingTaskId
+        ? {
+            ...task,
+            title: taskValues.title.trim(),
+            course: taskValues.course.trim() || "Sin curso",
+            dueDate: taskValues.dueDate,
+            priority: taskValues.priority,
+          }
+        : task,
+    );
+  } else {
+    state.tasks.push(
+      createTask(
+        taskValues.title,
+        taskValues.course,
+        taskValues.dueDate,
+        taskValues.priority,
+      ),
+    );
+  }
+  if (!saveTasks()) return;
   updateCourseFilter();
   renderTasks();
-  elements.form.reset();
-  elements.priorityInput.value = "media";
+  resetForm();
   elements.titleInput.focus();
+  announce(isEditing ? "Tarea actualizada." : "Tarea agregada.");
 }
 
 function initializeEvents() {
   elements.form.addEventListener("submit", handleFormSubmit);
+  elements.cancelButton.addEventListener("click", resetForm);
+  elements.clearFiltersButton.addEventListener("click", clearFilters);
+  elements.exportButton.addEventListener("click", exportTasks);
+  elements.importButton.addEventListener("click", () =>
+    elements.importInput.click(),
+  );
+  elements.importInput.addEventListener("change", (event) =>
+    importTasks(event.target.files[0]),
+  );
+  elements.taskSearch.addEventListener("input", (event) => {
+    state.searchQuery = event.target.value;
+    renderTasks();
+    announce(
+      state.searchQuery
+        ? `Búsqueda activa: ${elements.taskCount.textContent}.`
+        : "Búsqueda limpiada.",
+    );
+  });
   elements.courseFilter.addEventListener("change", (event) => {
     state.courseFilter = event.target.value;
+    renderTasks();
+  });
+  elements.sortFilter.addEventListener("change", (event) => {
+    state.sortBy = event.target.value;
     renderTasks();
   });
   elements.statusButtons.forEach((button) => {
     button.addEventListener("click", () => {
       state.statusFilter = button.dataset.status;
       elements.statusButtons.forEach((filterButton) => {
-        filterButton.classList.toggle("is-active", filterButton === button);
+        updateStatusButton(filterButton);
       });
       renderTasks();
+      announce(`Filtro seleccionado: ${button.textContent}.`);
     });
   });
 }

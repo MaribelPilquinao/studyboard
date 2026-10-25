@@ -1,46 +1,29 @@
 # StudyBoard
 
-## Contexto
+Aplicación web local para organizar tareas académicas. Los datos se guardan en
+`localStorage` del navegador.
 
-Los estudiantes universitarios suelen tener varios cursos y otras responsabilidades que deben coordinar.
+## Ejecutar
 
-## Problema
+Abre `index.html` en un navegador moderno. Para evitar restricciones del
+navegador con archivos locales, también puedes servir la carpeta con cualquier
+servidor HTTP estático.
 
-Pueden olvidar fechas de entrega y no saber qué tareas deben priorizar.
+## Pruebas y validación
 
-## Usuario objetivo
+Requiere Node.js 18 o superior:
 
-Estudiantes de pregrado.
+```powershell
+npm install
+npm test
+npm run validate
+```
 
-## Objetivo de la solución
+`npm run validate` ejecuta ESLint, las pruebas automatizadas y las
+comprobaciones de sintaxis.
 
-Organizar las entregas académicas y mostrar cuáles son urgentes.
+## Importar y exportar
 
-## Funcionalidades principales
-
-- Agregar una tarea con curso, fecha y prioridad.
-- Marcar tareas como completadas.
-- Filtrar tareas por curso y estado.
-- Mostrar un indicador de urgencia según los días restantes.
-- Mostrar un contador de progreso.
-- Guardar la información de forma persistente en `localStorage`.
-
-## Tecnologías
-
-- HTML
-- CSS
-- JavaScript puro, sin dependencias
-
-## Estructura de archivos
-
-- `index.html`
-- `styles.css`
-- `app.js`
-- `README.md`
-
-## Instrucciones de ejecución
-
-Abre `index.html` en el navegador.
-
-## Uso de GitHub Copilot
-
+La exportación genera un archivo JSON. La importación reemplaza las tareas
+actuales después de pedir confirmación, acepta archivos de hasta 1 MB y rechaza
+JSON inválido, tareas con campos inválidos o IDs duplicados.

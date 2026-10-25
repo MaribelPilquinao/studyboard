@@ -1,0 +1,17 @@
+{
+  "name": "studyboard",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write \"*.{js,html,css,json,md}\" \"test/**/*.js\"",
+    "format:check": "prettier --check \"*.{js,html,css,json,md}\" \"test/**/*.js\"",
+    "validate": "npm run lint && npm run format:check && npm test && node --check app.js && node --check task-utils.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "prettier": "^3.9.10"
+  }
+}

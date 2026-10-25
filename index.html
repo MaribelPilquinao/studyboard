@@ -1,103 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StudyBoard | Organiza tus tareas</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main class="app-shell">
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">Tu espacio de estudio</p>
-        <h1>StudyBoard</h1>
-        <p class="subtitle">Organiza tus tareas y llega a tiempo a cada entrega.</p>
-      </div>
-      <div class="progress-card" aria-live="polite">
-        <span class="progress-label">Progreso</span>
-        <strong id="progress-count">0 de 0</strong>
-        <div class="progress-track" aria-hidden="true">
-          <span id="progress-bar"></span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudyBoard | Organiza tus tareas</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Tu espacio de estudio</p>
+          <h1>StudyBoard</h1>
+          <p class="subtitle">
+            Organiza tus tareas y llega a tiempo a cada entrega.
+          </p>
         </div>
-      </div>
-    </header>
+        <div class="progress-card" aria-live="polite">
+          <span class="progress-label">Progreso</span>
+          <strong id="progress-count">0 de 0</strong>
+          <div class="progress-track" aria-hidden="true">
+            <span id="progress-bar"></span>
+          </div>
+        </div>
+      </header>
 
-    <section class="panel form-panel" aria-labelledby="new-task-title">
-      <h2 id="new-task-title">Agregar tarea</h2>
-      <form id="task-form" novalidate>
-        <div class="form-grid">
-          <label class="field field-title">
-            <span>Título</span>
-            <input id="task-title" name="title" type="text" placeholder="Ej. Preparar exposición" required>
-            <small class="field-error" id="title-error"></small>
-          </label>
-          <label class="field">
-            <span>Curso</span>
-            <input id="task-course" name="course" type="text" placeholder="Ej. Historia">
-          </label>
-          <label class="field">
-            <span>Fecha de entrega</span>
-            <input id="task-due-date" name="dueDate" type="date" required>
-            <small class="field-error" id="date-error"></small>
-          </label>
-          <label class="field">
-            <span>Prioridad</span>
-            <select id="task-priority" name="priority">
-              <option value="alta">Alta</option>
-              <option value="media" selected>Media</option>
-              <option value="baja">Baja</option>
+      <section class="panel form-panel" aria-labelledby="new-task-title">
+        <h2 id="new-task-title">Agregar tarea</h2>
+        <form id="task-form" novalidate>
+          <div class="form-grid">
+            <label class="field field-title">
+              <span>Título</span>
+              <input
+                id="task-title"
+                name="title"
+                type="text"
+                placeholder="Ej. Preparar exposición"
+                required
+                aria-describedby="title-error"
+              />
+              <small class="field-error" id="title-error" role="alert"></small>
+            </label>
+            <label class="field">
+              <span>Curso</span>
+              <input
+                id="task-course"
+                name="course"
+                type="text"
+                placeholder="Ej. Historia"
+              />
+            </label>
+            <label class="field">
+              <span>Fecha de entrega</span>
+              <input
+                id="task-due-date"
+                name="dueDate"
+                type="date"
+                required
+                aria-describedby="date-error"
+              />
+              <small class="field-error" id="date-error" role="alert"></small>
+            </label>
+            <label class="field">
+              <span>Prioridad</span>
+              <select id="task-priority" name="priority">
+                <option value="alta">Alta</option>
+                <option value="media" selected>Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button
+              id="submit-button"
+              class="button button-primary"
+              type="submit"
+            >
+              Agregar tarea
+            </button>
+            <button
+              id="cancel-button"
+              class="button button-secondary"
+              type="button"
+              hidden
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="toolbar" aria-label="Filtros de tareas">
+        <div class="filter-group search-group">
+          <label class="filter-label" for="task-search">Buscar</label>
+          <input
+            id="task-search"
+            type="search"
+            placeholder="Título o curso"
+            autocomplete="off"
+          />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="course-filter">Curso</label>
+          <div class="select-control">
+            <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5h16M7 5l1 14h8l1-14M9 5l1-2h4l1 2" />
+            </svg>
+            <select id="course-filter">
+              <option value="todos">Todos los cursos</option>
             </select>
-          </label>
+          </div>
         </div>
-        <button class="button button-primary" type="submit">Agregar tarea</button>
-      </form>
-    </section>
-
-    <section class="toolbar" aria-label="Filtros de tareas">
-      <div class="filter-group">
-        <label class="filter-label" for="course-filter">Curso</label>
-        <select id="course-filter">
-          <option value="todos">Todos los cursos</option>
-        </select>
-      </div>
-      <div class="status-filters" role="group" aria-label="Estado de las tareas">
-        <button class="filter-button is-active" type="button" data-status="todas">Todas</button>
-        <button class="filter-button" type="button" data-status="pendientes">Pendientes</button>
-        <button class="filter-button" type="button" data-status="completadas">Completadas</button>
-      </div>
-    </section>
-
-    <section aria-labelledby="task-list-title">
-      <div class="section-heading">
-        <h2 id="task-list-title">Mis tareas</h2>
-        <span id="task-count" class="task-count">0 tareas</span>
-      </div>
-      <div id="task-list" class="task-list"></div>
-      <p id="empty-state" class="empty-state">Aún no tienes tareas. Agrega la primera para comenzar.</p>
-    </section>
-  </main>
-
-  <template id="task-template">
-    <article class="task-card">
-      <div class="task-main">
-        <div class="task-title-row">
-          <h3 class="task-title"></h3>
-          <span class="priority-badge"></span>
+        <div class="filter-group sort-group">
+          <label class="filter-label" for="sort-filter">Ordenar por</label>
+          <div class="select-control">
+            <svg class="filter-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M7 12h10M10 17h4" />
+            </svg>
+            <select id="sort-filter">
+              <option value="date-asc">Fecha más cercana</option>
+              <option value="date-desc">Fecha más lejana</option>
+              <option value="priority">Prioridad</option>
+              <option value="title">Título</option>
+            </select>
+          </div>
         </div>
-        <p class="task-course"></p>
-        <div class="task-meta">
-          <span class="task-date"></span>
-          <span class="urgency-badge"></span>
+        <div
+          class="status-filters"
+          role="group"
+          aria-label="Estado de las tareas"
+        >
+          <button
+            class="filter-button is-active"
+            type="button"
+            data-status="todas"
+            aria-pressed="true"
+          >
+            Todas
+          </button>
+          <button
+            class="filter-button"
+            type="button"
+            data-status="pendientes"
+            aria-pressed="false"
+          >
+            Pendientes
+          </button>
+          <button
+            class="filter-button"
+            type="button"
+            data-status="completadas"
+            aria-pressed="false"
+          >
+            Completadas
+          </button>
         </div>
-      </div>
-      <div class="task-actions">
-        <button class="button button-complete" type="button"></button>
-        <button class="button button-delete" type="button">Eliminar</button>
-      </div>
-    </article>
-  </template>
+        <button
+          id="clear-filters-button"
+          class="button button-secondary"
+          type="button"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16M7 5l1 14h8l1-14M9 5l1-2h4l1 2m-5 4v6m4-6v6" />
+          </svg>
+          Limpiar filtros
+        </button>
+      </section>
+      <section class="data-actions" aria-labelledby="data-actions-title">
+        <h2 id="data-actions-title">Datos</h2>
+        <div class="data-action-buttons">
+          <button
+            id="export-button"
+            class="button button-secondary"
+            type="button"
+          >
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" />
+            </svg>
+            Exportar tareas
+          </button>
+          <button
+            id="import-button"
+            class="button button-secondary"
+            type="button"
+          >
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15V3m0 0L8 7m4-4 4 4M5 14v5h14v-5" />
+            </svg>
+            Importar tareas
+          </button>
+          <input
+            id="import-input"
+            type="file"
+            accept="application/json,.json"
+            hidden
+          />
+        </div>
+      </section>
 
-  <script src="app.js"></script>
-</body>
+      <section aria-labelledby="task-list-title">
+        <div class="section-heading">
+          <h2 id="task-list-title">Mis tareas</h2>
+          <span id="task-count" class="task-count">0 tareas</span>
+        </div>
+        <p id="results-summary" class="results-summary" aria-live="polite"></p>
+        <div
+          id="task-list"
+          class="task-list"
+          aria-live="polite"
+          aria-atomic="false"
+        ></div>
+        <p id="empty-state" class="empty-state">
+          Aún no tienes tareas. Agrega la primera para comenzar.
+        </p>
+      </section>
+      <p
+        id="status-message"
+        class="status-message"
+        role="status"
+        aria-live="polite"
+      ></p>
+      <p class="motivation-message">Cada pequeño avance cuenta.</p>
+    </main>
+
+    <template id="task-template">
+      <article class="task-card" tabindex="-1">
+        <div class="task-main">
+          <div class="task-title-row">
+            <h3 class="task-title"></h3>
+            <span class="priority-badge"></span>
+          </div>
+          <p class="task-course"></p>
+          <div class="task-meta">
+            <span class="task-date"></span>
+            <span class="urgency-badge"></span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="button button-complete" type="button">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+          </button>
+          <button class="button button-edit" type="button">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m4 16-.8 4.8L8 20l11.5-11.5a2.1 2.1 0 0 0-3-3L5 17zm9.5-9.5 3 3"
+              />
+            </svg>
+          </button>
+          <button class="button button-delete" type="button">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16m-10 4v6m4-6v6M9 7V4h6v3m-9 0 1 13h10l1-13" />
+            </svg>
+          </button>
+        </div>
+      </article>
+    </template>
+
+    <script src="task-utils.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
