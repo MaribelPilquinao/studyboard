@@ -1,5 +1,7 @@
 # StudyBoard
 
+[Sitio publicado](https://maribelpilquinao.github.io/studyboard/)
+
 ## Contexto
 
 Los estudiantes universitarios suelen tener varios cursos y otras responsabilidades que deben coordinar.
