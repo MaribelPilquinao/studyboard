@@ -68,4 +68,18 @@ La exportación genera un archivo JSON. La importación reemplaza las tareas act
 
 ## Uso de GitHub Copilot
 
-Este proyecto fue creado y mejorado con apoyo de GitHub Copilot.
+Se usó la **GitHub Copilot app** siguiendo el workshop [Copilot App](https://github-samples.github.io/copilot-workshops/first-steps/copilot-app/), adaptado a StudyBoard. Se omitió lo no disponible en la licencia.
+
+| Tarea | Apoyo de Copilot | Mi decisión |
+|---|---|---|
+| Documentación inicial | Generó el primer README a partir de un prompt con la problemática | Corregí las secciones que no coincidían con mi caso |
+| Implementación base | Generó `index.html`, `styles.css` y `app.js` | Mantuve HTML, CSS y JS puro, sin frameworks |
+| Alcance extra | Agregó pruebas, ESLint, `task-utils.js` e importar/exportar JSON, sin que lo pidiera | [Decidí conservarlo porque me pareció algo útil para la app / lo revisé para poder explicarlo] |
+| Backlog | Creó 3 issues con historia de usuario y criterios de aceptación | Elegí el issue #1 (notas) por su valor y alcance |
+| Issue #1: notas | Implementó el campo con límite de 500 caracteres, pruebas y compatibilidad con tareas antiguas | [Verifiqué que las notas se muestran con `textContent` / lo que cambié o rechacé] |
+| Pull request | Abrió el PR desde una rama aislada (worktree) | [Revisé el diff antes de fusionar a `main`] |
+| Despliegue | Creó el workflow de GitHub Pages | [Revisé que publicara solo los archivos estáticos] |
+| Mejoras de código | Refactorizó la lógica a `task-utils.js` y ordenó `app.js` | [Revisé la separación entre datos, lógica y renderizado] |
+| Mejoras de interfaz | Mejoró la UI a petición mía: íconos, estilos, jerarquía visual y diseño responsive | [Pedí ajustes hasta que la interfaz fuera clara / lo que corregí o descarté] |
+
+Copilot se usó como apoyo: yo definí qué mejorar (código, interfaz e iconos), revisé cada cambio.
