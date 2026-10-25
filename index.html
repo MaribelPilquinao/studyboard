@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyBoard | Organiza tus tareas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Tu espacio de estudio</p>
+        <h1>StudyBoard</h1>
+        <p class="subtitle">Organiza tus tareas y llega a tiempo a cada entrega.</p>
+      </div>
+      <div class="progress-card" aria-live="polite">
+        <span class="progress-label">Progreso</span>
+        <strong id="progress-count">0 de 0</strong>
+        <div class="progress-track" aria-hidden="true">
+          <span id="progress-bar"></span>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel form-panel" aria-labelledby="new-task-title">
+      <h2 id="new-task-title">Agregar tarea</h2>
+      <form id="task-form" novalidate>
+        <div class="form-grid">
+          <label class="field field-title">
+            <span>Título</span>
+            <input id="task-title" name="title" type="text" placeholder="Ej. Preparar exposición" required>
+            <small class="field-error" id="title-error"></small>
+          </label>
+          <label class="field">
+            <span>Curso</span>
+            <input id="task-course" name="course" type="text" placeholder="Ej. Historia">
+          </label>
+          <label class="field">
+            <span>Fecha de entrega</span>
+            <input id="task-due-date" name="dueDate" type="date" required>
+            <small class="field-error" id="date-error"></small>
+          </label>
+          <label class="field">
+            <span>Prioridad</span>
+            <select id="task-priority" name="priority">
+              <option value="alta">Alta</option>
+              <option value="media" selected>Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </label>
+        </div>
+        <button class="button button-primary" type="submit">Agregar tarea</button>
+      </form>
+    </section>
+
+    <section class="toolbar" aria-label="Filtros de tareas">
+      <div class="filter-group">
+        <label class="filter-label" for="course-filter">Curso</label>
+        <select id="course-filter">
+          <option value="todos">Todos los cursos</option>
+        </select>
+      </div>
+      <div class="status-filters" role="group" aria-label="Estado de las tareas">
+        <button class="filter-button is-active" type="button" data-status="todas">Todas</button>
+        <button class="filter-button" type="button" data-status="pendientes">Pendientes</button>
+        <button class="filter-button" type="button" data-status="completadas">Completadas</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="task-list-title">
+      <div class="section-heading">
+        <h2 id="task-list-title">Mis tareas</h2>
+        <span id="task-count" class="task-count">0 tareas</span>
+      </div>
+      <div id="task-list" class="task-list"></div>
+      <p id="empty-state" class="empty-state">Aún no tienes tareas. Agrega la primera para comenzar.</p>
+    </section>
+  </main>
+
+  <template id="task-template">
+    <article class="task-card">
+      <div class="task-main">
+        <div class="task-title-row">
+          <h3 class="task-title"></h3>
+          <span class="priority-badge"></span>
+        </div>
+        <p class="task-course"></p>
+        <div class="task-meta">
+          <span class="task-date"></span>
+          <span class="urgency-badge"></span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="button button-complete" type="button"></button>
+        <button class="button button-delete" type="button">Eliminar</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
